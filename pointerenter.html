@@ -16,18 +16,46 @@
 	<script src="pointer-prefix.js"></script>
 	<script>
 	var test_pointerenter = async_test("pointerenter event received");
+	var test_pointerenter_is_pointerevent = async_test("pointerenter is an instanceof PointerEvent");
+	var test_nohover = async_test("non-hover-supporting device generates pointerenter on pointerdown");
+	var test_downComesFirst = async_test("pointerdown event precedes pointerenter event");
 
 	function run() {
 //		setup({ explicit_done: true });				
 		var target0 = document.getElementById("target0");
+		var target1 = document.getElementById("target1");
 		
-//		on_event(target0, pointerPrefix["pointerover"], function(event) {
-		on_event(target0, "mouseenter", function(event) {
+		// TA 8.1
+		on_event(target0, pointerPrefix["pointerenter"], function(event) {		
 			test_pointerenter.step(function () {
 				assert_true(true, "pointerenter event was received");
 			});
 			test_pointerenter.done();
+			
+			test_pointerenter_is_pointerevent.step(function () {
+				assert_true(event instanceof pointerPrefix["PointerEvent"],
+				"event is a PointerEvent event");
+			});
+			test_pointerenter_is_pointerevent.done();
 	 		
+	 		target1.style.display = "block";
+
+		
+			// TA 8.1.1
+			on_event(target1, pointerPrefix["pointerdown"], function(event) {
+				on_event(target1, pointerPrefix["pointerenter"], function(event) {
+					test_downComesFirst.step(function(){
+						assert_true(true, "pointerdown precedes pointerenter");
+						
+					});
+					test_downComesFirst.done();
+					
+					test_nohover.step(function (){
+						assert_true(true, "User clicked in box, assuming nohover");
+					});
+					test_nohover.done();
+				});				
+			});			
 		});
 	}
 
@@ -40,6 +68,11 @@
 		#target0 {
 			background: yellow;
 			border: 1px solid orange;
+		}
+		#target1 {
+			background: cyan;
+			border: 1px solid blue;
+			display: none;
 		}
 		#complete-notice {
 			background: #afa;
@@ -55,6 +88,9 @@
 	<h1>Pointer Events pointerenter Tests</h1>
 	<div id="target0">
 		Start with your pointing device outside of this box, then move it over here.
+	</div>
+	<div id="target1">
+		If your pointing device doesn't support hover (e.g. touchscreen), click here.
 	</div>
 	<div id="complete-notice">
 		<p>The following pointer types were detected: <span id="pointertype-log"></span>.</p>
